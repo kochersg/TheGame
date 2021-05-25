@@ -56,67 +56,6 @@ class CTheGame():
         n_cards+=len(self.card_deck)
         return n_cards
 
-    def _check_stack_min_diff(self, min_difference, hand, upwards=True):
-        min_val=100
-        min_stack=0
-        min_ix=0
-        if upwards:
-            for kk in range(2):
-                for jj in range(len(hand)):
-                    if abs(min_difference[kk][jj])<min_val and min_difference[kk][jj]>0:
-                        min_val=min_difference[kk][jj]
-                        min_stack=kk
-                        min_ix=jj
-        else:
-            for kk in range(2):
-                for jj in range(len(hand)):
-                    if abs(min_difference[kk+2][jj])<min_val and min_difference[kk+2][jj]<0:
-                        min_val=abs(min_difference[kk+2][jj])
-                        min_stack=kk+2
-                        min_ix=jj
-        return min_val, min_stack, min_ix
-
-
-    def _calc_min_difference(self, hand:dict):
-        min_difference={}
-        # Check for distance of ten
-        for jj in range(4):
-            min_difference[jj]=[kk-self.stack[jj][-1] for kk in hand]
-        return min_difference
-
-    def _check_if_card_within_threshold(self, hand:dict):
-        min_diff=self._calc_min_difference(hand)
-        for jj in min_diff:
-            for kk in min_diff[jj]:
-                if abs(kk)<=self.diff_thresh:
-                    # print(self)
-                    return True
-        return False
-
-    def play_card_metric(self, hand:dict):
-        min_difference=self._calc_min_difference(hand)
-        for jj in range(4):
-            if jj in (0,1):
-                if -10 in min_difference[jj]:
-                    ix=min_difference[jj].index(-10)
-                    self.stack[jj].append(hand.pop(ix))
-                    return True
-            if jj in (2,3):
-                if 10 in min_difference[jj]:
-                    ix=min_difference[jj].index(10)
-                    self.stack[jj].append(hand.pop(ix))
-                    return True
-        # print(min_difference)
-        min_val1, min_stack1, min_ix1=self._check_stack_min_diff(min_difference, hand, upwards=True)
-        min_val2, min_stack2, min_ix2=self._check_stack_min_diff(min_difference, hand, upwards=False)
-        if min_val1<=min_val2 and min_val1!=100:
-            self.stack[min_stack1].append(hand.pop(min_ix1))
-        elif min_val2<min_val1 and min_val2!=100:
-            self.stack[min_stack2].append(hand.pop(min_ix2))
-        else:
-            return False
-        return True
-
     def calc_card_weight_function(self, hand:dict):
         weights={}
         for kk in range(2):
@@ -172,12 +111,9 @@ class CTheGame():
         hand=self.player[self.active_player]
         if len(hand)==0:
             return True
-        if strategy=='metric':
-            return self.play_card_metric(hand)
-        else:
-            weights=self.calc_card_weight_function(hand)
-            best_card_weight, best_card_ix, best_card_stack=self.get_card_and_stack_of_best_weight(weights)
-            return self.play_card_of_best_weight(best_card_weight, best_card_ix, best_card_stack)
+        weights=self.calc_card_weight_function(hand)
+        best_card_weight, best_card_ix, best_card_stack=self.get_card_and_stack_of_best_weight(weights)
+        return self.play_card_of_best_weight(best_card_weight, best_card_ix, best_card_stack)
             
     def refresh_hand(self):
         hand=self.player[self.active_player]
@@ -194,10 +130,6 @@ class CTheGame():
         if len(self.card_deck)>0:
             if not self.play_card(strategy='weight'):
                 self.stop=True
-        # while self._check_if_card_within_threshold(self.player[self.active_player]):
-        #     if not self.play_card(strategy='weight'):
-        #         self.stop=True
-        #         break
         while True:
             weights=self.calc_card_weight_function(self.player[self.active_player])
             best_card_weight, best_card_ix, best_card_stack=self.get_card_and_stack_of_best_weight(weights)
